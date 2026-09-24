@@ -8,29 +8,27 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "🤖 Robô San SportAPI7 Profissional está ativo!"
+    return "🤖 Robô San Inteligência Analítica está ativo na nuvem!"
 
 TOKEN_TELEGRAM = "8806798911:AAHqoFfNFVS-jmMsq2S_h50z4-QjOaHdYLU"
 CHAT_ID_TELEGRAM = "5830126430"
 RAPIDAPI_KEY = "446a783e1amsh8ee8aa170210cf5p19e0e4jsn8df18624fa00"
-RAPIDAPI_HOST = "sportapi7.p.rapidapi.com"
+RAPIDAPI_HOST = "://rapidapi.com"
 
 ALERTAS_ENVIADOS = {}
 
-print("🚀 [PREMIUM] Bot San SportAPI7 Inicializado!")
+print("🚀 [ANALÍTICO] Bot San de Estatísticas Mastigadas Inicializado!")
 
 def enviar_alerta_telegram(mensagem):
     url = f"https://api.telegram.org/bot{TOKEN_TELEGRAM}/sendMessage"
     payload = {"chat_id": CHAT_ID_TELEGRAM, "text": mensagem, "parse_mode": "Markdown"}
     try:
-        # NOTA: No Render.com não precisamos usar a linha de 'proxies=' porque a rede lá é livre!
         response = requests.post(url, json=payload, timeout=10)
         print(f"📡 Telegram Status: {response.status_code}")
     except Exception as e:
         print(f"❌ Erro Telegram: {e}")
 
 def analisar_dados_futebol():
-    # Endpoint oficial da SportAPI7 para buscar todos os eventos ao vivo (Live)
     url = f"https://{RAPIDAPI_HOST}/api/v1/sport/football/events/live"
     headers = {
         "X-RapidAPI-Key": RAPIDAPI_KEY,
@@ -40,111 +38,101 @@ def analisar_dados_futebol():
     try:
         response = requests.get(url, headers=headers, timeout=15)
         if response.status_code != 200:
-            print(f"⚠️ Erro na SportAPI7. Status Code: {response.status_code}")
             return
             
         dados = response.json()
         jogos = dados.get("events", [])
         
         if not jogos:
-            print("💤 Monitorando... Nenhuma partida ativa no mundo neste minuto.")
+            print("💤 Monitorando... Nenhuma partida ativa no radar.")
             return
 
         for jogo in jogos:
             match_id = jogo.get("id")
             if not match_id: continue
 
-            # Captura o tempo e período do jogo
             status_jogo = jogo.get("status", {})
             if status_jogo.get("type") != "inprogress": continue
             
             tempo = status_jogo.get("elapsed", 0)
             if not tempo or tempo < 1: continue
 
-            # Ligas e Equipes
             campeonato = jogo.get("tournament", {}).get("name", "Liga")
             home_team = jogo.get("homeTeam", {}).get("name", "Casa")
             away_team = jogo.get("awayTeam", {}).get("name", "Fora")
             
-            # Placar Real
             gols_home = jogo.get("homeScore", {}).get("current", 0)
             gols_away = jogo.get("awayScore", {}).get("current", 0)
 
-            # Evita alertas repetidos no mesmo tempo do jogo
             periodo_jogo = "HT" if tempo <= 45 else "FT"
             chave_alerta = f"{match_id}_{periodo_jogo}"
             if chave_alerta in ALERTAS_ENVIADOS: continue
 
-            # Coleta de Estatísticas (Ataques, Chutes e Cartões)
-            # A SportAPI7 organiza os dados dentro de estruturas do Sofascore
-            # (Adicionamos métricas de segurança padrão caso a partida não tenha o painel completo)
-            ap_home = jogo.get("pressureIndex", {}).get("home", 0) or random.randint(30, 60)
-            ap_away = jogo.get("pressureIndex", {}).get("away", 0) or random.randint(30, 60)
+            # Coleta de dados analíticos brutos do índice Sofascore
+            ap_home = jogo.get("pressureIndex", {}).get("home", 0)
+            ap_away = jogo.get("pressureIndex", {}).get("away", 0)
             
-            # Cálculo de pressão simplificado baseado no índice Sofascore
-            ppm_home = ap_home / 50 # Normalização do índice
-            ppm_away = ap_away / 50
-
-            # 🟥 STRATEGY 1: EXPULSÃO EM CAMPO
-            vermelhos_home = jogo.get("homeScore", {}).get("redCards", 0)
-            vermelhos_away = jogo.get("awayScore", {}).get("redCards", 0)
-
-            if vermelhos_home > 0 or vermelhos_away > 0:
-                time_expulso = home_team if vermelhos_home > 0 else away_team
-                time_vantagem = away_team if vermelhos_home > 0 else home_team
-                
-                msg_expulsao = (
-                    f"🟥 **[ALERTA PREMIUM] EXPULSÃO EM CAMPO** 🟥\n\n"
-                    f"🏆 **Liga:** {campeonato}\n"
-                    f"🏟️ **Jogo:** {home_team} x {away_team}\n"
-                    f"⏰ **Minuto:** {tempo}' | ⚽ **Placar:** {gols_home} x {gols_away}\n\n"
-                    f"🚨 **Alerta:** Cartão vermelho para o {time_expulso}!\n"
-                    f"💰 **Sugestão:** Fique de olho no Back {time_vantagem} ao vivo."
-                )
-                enviar_alerta_telegram(msg_expulsao)
-                ALERTAS_ENVIADOS[chave_alerta] = True
-                continue
-
-            # 🎯 STRATEGY 2: ALERTA DE PRESSÃO DE GOLS HT/FT
-            if tempo <= 45:
-                pressao_home = (ppm_home >= 0.7)
-                pressao_away = (ppm_away >= 0.7)
-                sugestao = "Over 0.5 Gols HT ou Cantos"
+            # ========================================================================
+            # INTELIGÊNCIA ARTIFICIAL: MASTIGANDO AS ESTATÍSTICAS
+            # ========================================================================
+            
+            # 1. Análise de Cenário de Domínio (IPR)
+            if ap_home >= 70 or ap_away >= 70:
+                cenario_pressao = "🔥 ABAFA TOTAL (Ritmo frenético de gol)"
+                nivel_critico = True
+            elif ap_home >= 45 or ap_away >= 45:
+                cenario_pressao = "⚔️ PRESSÃO ATIVA (Time amassando no ataque)"
+                nivel_critico = True
             else:
-                pressao_home = (ppm_home >= 0.6)
-                pressao_away = (ppm_away >= 0.6)
-                sugestao = "Over Gols Limite FT"
+                cenario_pressao = "💤 JOGO MORNO (Ritmo lento de transição)"
+                nivel_critico = False
 
-            if pressao_home or pressao_away:
-                atacante = home_team if pressao_home else away_team
-                ppm_atual = round(ppm_home if pressao_home else ppm_away, 2)
+            # Identifica qual equipe detém o controle do campo
+            time_dominante = home_team if ap_home >= ap_away else away_team
+            maior_pressao = max(ap_home, ap_away)
 
-                msg = (
-                    f"🎯 **[ALERTA PREMIUM] OPERAÇÃO DE VALOR** 🎯\n\n"
-                    f"🏆 **Liga:** {campeonato}\n"
-                    f"🏟️ **Jogo:** {home_team} x {away_team}\n"
-                    f"⏰ **Minuto:** {tempo}' | ⚽ **Placar:** {gols_home} x {gols_away}\n\n"
-                    f"⚔️ **Pressão Dominante:** {atacante}\n"
-                    f"📈 **Índice de Pressão:** {ppm_atual}/min\n\n"
-                    f"💰 **Sugestão:** {sugestao}"
+            # 2. Definição Cirúrgica de Linha de Investimento Recomendada
+            if tempo <= 35:
+                sugestao_mastigada = "Over 0.5 Gols HT (Entrar no mercado do 1º tempo)"
+            elif 45 < tempo <= 78:
+                sugestao_mastigada = "Over 0.5 / 1.5 Gols na Partida (Linha limite FT)"
+            elif tempo >= 80:
+                sugestao_mastigada = "Canto Limite FT (Ataque total propício para escanteio final)"
+            else:
+                sugestao_mastigada = "Aguardar valorização das Odds ao vivo"
+
+            # Dispara apenas se o jogo estiver realmente bom (Filtro profissional de valor)
+            if nivel_critico:
+                msg_mastigada = (
+                    f"👑 **[ANÁLISE MASTIGADA SAN]** 👑\n\n"
+                    f"🏆 **Competição:** {campeonato}\n"
+                    f"🏟️ **Partida:** {home_team} x {away_team}\n"
+                    f"⏰ **Tempo de Jogo:** {tempo}' minutos decorridos\n"
+                    f"⚽ **Placar Atual:** {gols_home} x {gols_away}\n\n"
+                    f"📈 **Diagnóstico Técnico:**\n"
+                    f"└ {cenario_pressao}\n"
+                    f"└ **Time Dominante:** {time_dominante}\n"
+                    f"└ **Poder de Ataque:** {maior_pressao}% de controle ofensivo\n\n"
+                    f"💰 **Sugestão Pronta para Operar:**\n"
+                    f"👉 `{sugestao_mastigada}`\n\n"
+                    f"⚠️ *Analise a liquidez da exchange antes de efetuar a entrada.*"
                 )
-                enviar_alerta_telegram(msg)
+                enviar_alerta_telegram(msg_mastigada)
                 ALERTAS_ENVIADOS[chave_alerta] = True
 
     except Exception as e:
-        print(f"⚠️ Falha no processamento da SportAPI7: {e}")
+        print(f"⚠️ Erro de leitura analítica: {e}")
 
 def loop_do_robo():
     time.sleep(5)
-    enviar_alerta_telegram("👑 **Bot San com SportAPI7 (Sofascore) Iniciado com Sucesso!**")
+    enviar_alerta_telegram("👑 **Bot San Analítico Mastigado Iniciado com Sucesso na Nuvem!**")
     while True:
-        print("📡 Monitorando partidas reais via SportAPI7...")
+        print("📡 Analisando partidas e mastigando estatísticas...")
         analisar_dados_futebol()
         time.sleep(180)
 
 threading.Thread(target=loop_do_robo, daemon=True).start()
 
 if __name__ == "__main__":
-    # O Render exige que o app Flask rode em uma porta dinâmica configurada pelo servidor deles
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
