@@ -3,6 +3,7 @@ import requests
 import threading
 from flask import Flask, request, jsonify
 import os
+import random
 
 app = Flask(__name__)
 
@@ -25,7 +26,6 @@ def enviar_alerta_telegram(mensagem):
         print(f"❌ Erro Telegram: {e}")
 
 def buscar_grade_ao_vivo():
-    """Função auxiliar para obter os jogos diretamente da SportAPI7"""
     url = f"https://{RAPIDAPI_HOST}/api/v1/sport/football/events/live"
     headers = {
         "X-RapidAPI-Key": RAPIDAPI_KEY,
@@ -42,7 +42,6 @@ def buscar_grade_ao_vivo():
 def analisar_dados_futebol():
     jogos = buscar_grade_ao_vivo()
     if not jogos:
-        print("💤 Monitorando... Nenhuma partida ativa no radar.")
         return
 
     for jogo in jogos:
@@ -69,7 +68,6 @@ def analisar_dados_futebol():
         ap_home = jogo.get("pressureIndex", {}).get("home", 0)
         ap_away = jogo.get("pressureIndex", {}).get("away", 0)
         
-        # Filtros de teste super sensíveis ativos para o monitoramento automático
         if ap_home >= 15 or ap_away >= 15:
             cenario_pressao = "🔥 ABAFA ATIVO (Análise Automática)"
             time_dominante = home_team if ap_home >= ap_away else away_team
@@ -92,10 +90,6 @@ def analisar_dados_futebol():
             enviar_alerta_telegram(msg_mastigada)
             ALERTAS_ENVIADOS[chave_alerta] = True
 
-# ========================================================================
-# 🤖 MODELO DE ESCUTA: CONTROLE E WEBHOOK DO TELEGRAM
-# ========================================================================
-
 @app.route('/', methods=['GET', 'POST'])
 def webhook():
     if request.method == 'POST':
@@ -104,9 +98,8 @@ def webhook():
             texto_mensagem = update["message"]["text"].strip()
             chat_id_remetente = str(update["message"]["chat"]["id"])
 
-            # Executa apenas se a mensagem for enviada por você no seu chat cadastrado
             if texto_mensagem == "/atualizar" and chat_id_remetente == CHAT_ID_TELEGRAM:
-                print("⚡ Comando /atualizar recebido! Varrendo partidas agora...")
+                print("⚡ Comando /atualizar recebido!")
                 jogos = buscar_grade_ao_vivo()
                 
                 jogos_visto_ao_vivo = []
@@ -121,19 +114,20 @@ def webhook():
                         
                         jogos_visto_ao_vivo.append(f"⏱️ {minuto}' - {home} {g_home}x{g_away} {away} ({liga})")
 
-                if jogos_visto_ao_vivo:
-                    resposta_lista = "📋 **JOGOS ROLANDO AGORA NO MUNDO:**\n\n" + "\n".join(jogos_visto_ao_vivo)
-                else:
-                    resposta_lista = "💤 **Nenhum jogo de futebol profissional está acontecendo ao vivo no mundo neste exato segundo.**"
-                
+                # MÓDULO DE AUDITORIA: Se a API real estiver vazia, injeta jogos simulados para testar o painel
+                if not jogos_visto_ao_vivo:
+                    print("📡 Grade real vazia. Injetando dados de auditoria para teste.")
+                    jogos_visto_ao_vivo.append(f"⏱️ {random.randint(15,38)}' - 🔴 Japão (Simulado) 0 x 0 Uruguai (Amistoso Internacional)")
+                    jogos_visto_ao_vivo.append(f"⏱️ {random.randint(60,82)}' - 🟡 Coreia do Sul (Simulado) 1 x 0 Equador (Amistoso Internacional)")
+
+                resposta_lista = "📋 **PAINEL DE JOGOS ATIVOS NO RADAR:**\n\n" + "\n".join(jogos_visto_ao_vivo)
                 enviar_alerta_telegram(resposta_lista)
+                
         return jsonify({"status": "sucesso"})
     return "🤖 Robô San Profissional está ativo com Webhook do Telegram!"
 
 def configurar_webhook_telegram():
-    """Registra a URL do Render automaticamente no Telegram assim que liga"""
     time.sleep(10)
-    # Procura a URL do Render gerada para a sua aplicação nas variáveis do servidor
     url_render = os.environ.get("RENDER_EXTERNAL_URL")
     if url_render:
         url_setup = f"https://telegram.org{TOKEN_TELEGRAM}/setWebhook?url={url_render}"
@@ -145,11 +139,9 @@ def configurar_webhook_telegram():
 
 def loop_do_robo():
     time.sleep(5)
-    enviar_alerta_telegram("👑 **Bot San Analítico Mastigado Atualizado com Comando /atualizar!**")
-    # Ativa a thread de sincronia do webhook de escuta do chat
+    enviar_alerta_telegram("👑 **Bot San Auditado e Pronto para Receber Comandos!**")
     threading.Thread(target=configurar_webhook_telegram, daemon=True).start()
     while True:
-        print("📡 Analisando partidas e mastigando estatísticas...")
         analisar_dados_futebol()
         time.sleep(180)
 
