@@ -68,54 +68,40 @@ def analisar_dados_futebol():
             chave_alerta = f"{match_id}_{periodo_jogo}"
             if chave_alerta in ALERTAS_ENVIADOS: continue
 
-            # Coleta de dados analíticos brutos do índice Sofascore
             ap_home = jogo.get("pressureIndex", {}).get("home", 0)
             ap_away = jogo.get("pressureIndex", {}).get("away", 0)
             
             # ========================================================================
-            # INTELIGÊNCIA ARTIFICIAL: MASTIGANDO AS ESTATÍSTICAS
+            # MÓDULO SUPER SENSÍVEL DE TESTE (Modificado para pegar qualquer jogo ativo)
             # ========================================================================
-            
-            # 1. Análise de Cenário de Domínio (IPR)
-            if ap_home >= 70 or ap_away >= 70:
-                cenario_pressao = "🔥 ABAFA TOTAL (Ritmo frenético de gol)"
-                nivel_critico = True
-            elif ap_home >= 45 or ap_away >= 45:
-                cenario_pressao = "⚔️ PRESSÃO ATIVA (Time amassando no ataque)"
+            if ap_home >= 15 or ap_away >= 15:
+                cenario_pressao = "🔥 ABAFA ATIVO (Análise de Teste de Sinal)"
                 nivel_critico = True
             else:
-                cenario_pressao = "💤 JOGO MORNO (Ritmo lento de transição)"
-                nivel_critico = False
+                cenario_pressao = "💤 RITMO COMPASSADO (Análise de Teste de Sinal)"
+                nivel_critico = True # Força o disparo mesmo se estiver lento
 
-            # Identifica qual equipe detém o controle do campo
             time_dominante = home_team if ap_home >= ap_away else away_team
             maior_pressao = max(ap_home, ap_away)
 
-            # 2. Definição Cirúrgica de Linha de Investimento Recomendada
             if tempo <= 35:
-                sugestao_mastigada = "Over 0.5 Gols HT (Entrar no mercado do 1º tempo)"
-            elif 45 < tempo <= 78:
-                sugestao_mastigada = "Over 0.5 / 1.5 Gols na Partida (Linha limite FT)"
-            elif tempo >= 80:
-                sugestao_mastigada = "Canto Limite FT (Ataque total propício para escanteio final)"
+                sugestao_mastigada = "Over 0.5 Gols HT (Modo Teste Ativo)"
             else:
-                sugestao_mastigada = "Aguardar valorização das Odds ao vivo"
+                sugestao_mastigada = "Over Gols Limite FT ou Cantos (Modo Teste Ativo)"
 
-            # Dispara apenas se o jogo estiver realmente bom (Filtro profissional de valor)
             if nivel_critico:
                 msg_mastigada = (
-                    f"👑 **[ANÁLISE MASTIGADA SAN]** 👑\n\n"
+                    f"👑 **[ANÁLISE MASTIGADA SAN - TESTE]** 👑\n\n"
                     f"🏆 **Competição:** {campeonato}\n"
                     f"🏟️ **Partida:** {home_team} x {away_team}\n"
-                    f"⏰ **Tempo de Jogo:** {tempo}' minutos decorridos\n"
+                    f"⏰ **Tempo de Jogo:** {tempo}' minutos\n"
                     f"⚽ **Placar Atual:** {gols_home} x {gols_away}\n\n"
                     f"📈 **Diagnóstico Técnico:**\n"
                     f"└ {cenario_pressao}\n"
                     f"└ **Time Dominante:** {time_dominante}\n"
-                    f"└ **Poder de Ataque:** {maior_pressao}% de controle ofensivo\n\n"
-                    f"💰 **Sugestão Pronta para Operar:**\n"
-                    f"👉 `{sugestao_mastigada}`\n\n"
-                    f"⚠️ *Analise a liquidez da exchange antes de efetuar a entrada.*"
+                    f"└ **Poder de Ataque:** {maior_pressao}% de controle\n\n"
+                    f"💰 **Sugestão Pronta:**\n"
+                    f"👉 `{sugestao_mastigada}`"
                 )
                 enviar_alerta_telegram(msg_mastigada)
                 ALERTAS_ENVIADOS[chave_alerta] = True
@@ -125,7 +111,7 @@ def analisar_dados_futebol():
 
 def loop_do_robo():
     time.sleep(5)
-    enviar_alerta_telegram("👑 **Bot San Analítico Mastigado Iniciado com Sucesso na Nuvem!**")
+    enviar_alerta_telegram("👑 **Bot San com Módulo Super Sensível Iniciado no Render!**")
     while True:
         print("📡 Analisando partidas e mastigando estatísticas...")
         analisar_dados_futebol()
